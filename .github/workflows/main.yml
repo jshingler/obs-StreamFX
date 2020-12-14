@@ -123,12 +123,12 @@ jobs:
       CMAKE_GENERATOR: "Ninja"
       CC: ${{ matrix.compiler }}
       CXX: ${{ matrix.compiler-cxx }}
-      CPACK_DEBIAN_PACKAGE_DEPENDS: "obs-studio (>= ${{ env.OBS_VERSION }})"
-      CPACK_DEBIAN_PACKAGE_ENHANCES: obs-studio
-      CPACK_DEBIAN_PACKAGE_PROVIDES: obs-streamfx
-      CPACK_DEBIAN_PACKAGE_NAME: obs-streamfx
-      CPACK_DEBIAN_PACKAGE_PRIORITY: optional
-      CPACK_DEBIAN_PACKAGE_SECTION: video
+      CPACK_DEBIAN_PACKAGE_DEPENDS: "obs-studio (>= 26.0.0)"
+      CPACK_DEBIAN_PACKAGE_ENHANCES: "obs-studio"
+      CPACK_DEBIAN_PACKAGE_PROVIDES: "obs-streamfx"
+      CPACK_DEBIAN_PACKAGE_NAME: "obs-streamfx"
+      CPACK_DEBIAN_PACKAGE_PRIORITY: "optional"
+      CPACK_DEBIAN_PACKAGE_SECTION: "video"
     steps:
     - name: "Clone Repository"
       uses: actions/checkout@v1
