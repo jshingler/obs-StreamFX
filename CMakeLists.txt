@@ -70,7 +70,7 @@ if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/.git") # Are we in a git repository?
 			list(GET GIT_OUTPUT 1 VERSION_MINOR)
 			list(GET GIT_OUTPUT 2 VERSION_PATCH)
 			list(GET GIT_OUTPUT 3 VERSION_BUILD)
-			list(GET GIT_OUTPUT 4 PROJECT_COMMIT)
+			list(GET GIT_OUTPUT 4 VERSION_COMMIT)
 		else()
 			message("${LOGPREFIX} Failed to detect version from git: ${GIT_ERROR}")
 		endif()
@@ -88,7 +88,7 @@ if(${PREFIX}VERSION)
 	list(GET GIT_OUTPUT 1 VERSION_MINOR)
 	list(GET GIT_OUTPUT 2 VERSION_PATCH)
 	list(GET GIT_OUTPUT 3 VERSION_BUILD)
-	list(GET GIT_OUTPUT 4 PROJECT_COMMIT)
+	list(GET GIT_OUTPUT 4 VERSION_COMMIT)
 endif()
 
 # Generate Version String
