@@ -132,10 +132,10 @@ jobs:
         # Build Type
         if [ "${{ matrix.type }}" == "system" ]; then
           echo "::set-output name=cmake-type::-DCPACK_SYSTEM_NAME=${{ matrix.id}} -DINSTALL_PERUSER=OFF"
-          echo "::set-output name=cmake-gen::-DCPACK_GENERATOR= -DCPACK_BINARY_DEB=ON"
+          echo "::set-output name=cmake-gen::-DCPACK_GENERATOR= -DCPACK_BINARY_DEB=ON -DCPACK_BINARY_STGZ=OFF -DCPACK_BINARY_TGZ=OFF -DCPACK_BINARY_TZSTD=OFF"
         else
-          echo "::set-output name=cmake-type::-DCPACK_SYSTEM_NAME=${{ matrix.id}} -DINSTALL_PERUSER=ON "
-          echo "::set-output name=cmake-gen::-DCPACK_GENERATOR= -DCPACK_BINARY_STGZ=ON -DCPACK_BINARY_TGZ=ON"
+          echo "::set-output name=cmake-type::-DCPACK_SYSTEM_NAME=${{ matrix.id}}-local -DINSTALL_PERUSER=ON"
+          echo "::set-output name=cmake-gen::-DCPACK_GENERATOR= -DCPACK_BINARY_STGZ=ON -DCPACK_BINARY_TGZ=ON -DCPACK_BINARY_TZSTD=OFF"
         fi
     - name: "Prerequisites: Submodules"
       shell: bash
