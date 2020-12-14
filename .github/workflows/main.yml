@@ -22,7 +22,7 @@ jobs:
         runner: [ windows-2019 ]
         include:
           - runner: windows-2019
-            id: windows2019
+            id: windows-2019
             windows_sdk: "10.0.18362.0"
             cmake_generator: "Visual Studio 16 2019"
             cmake_generator_platform: "x64"
@@ -69,8 +69,9 @@ jobs:
       run: |
         cmake -H. -B"build/temp" \
           -DCMAKE_INSTALL_PREFIX="build/distrib" \
-          -DCMAKE_PACKAGE_NAME="streamfx-${{ matrix.id }}" \
-          -DCMAKE_PACKAGE_PREFIX="build/package"
+          -DCPACK_PACKAGE_NAME="streamfx" \
+          -DCPACK_GENERATOR= -DCPACK_BINARY_NSIS=OFF -DCPACK_BINARY_7Z=ON -DCPACK_BINARY_ZIP=ON \
+          -DCPACK_OUTPUT_FILE_PREFIX=../package
     - name: "Build Project"
       shell: bash
       run: |
@@ -78,9 +79,7 @@ jobs:
     - name: "Package Project"
       shell: bash
       run: |
-        mkdir build/package
-        cmake --build "build/temp" --config RelWithDebInfo --target PACKAGE_7Z
-        cmake --build "build/temp" --config RelWithDebInfo --target PACKAGE_ZIP
+        cmake --build "build/temp" --config RelWithDebInfo --target PACKAGE
     - name: "Package Installer (Prereqs)"
       run: |
         curl "-kL" "https://cdn.xaymar.com/ci/innosetup-6.0.3.exe" "-f" "--retry" "5" "-o" "inno.exe"
@@ -100,6 +99,7 @@ jobs:
       matrix:
         ubuntu: [ focal ]
         compiler: [ gcc, clang ]
+        type: [ system, local ]
         include:
           - ubuntu: focal
             compiler: gcc
@@ -125,6 +125,18 @@ jobs:
     steps:
     - name: "Clone Repository"
       uses: actions/checkout@v1
+    - name: "Gather Information"
+      id: data
+      shell: bash
+      run: |
+        # Build Type
+        if [ "${{ matrix.type }}" == "system" ]; then
+          echo "::set-output name=cmake-type::-DCPACK_SYSTEM_NAME=${{ matrix.id}} -DINSTALL_PERUSER=OFF"
+          echo "::set-output name=cmake-gen::-DCPACK_GENERATOR= -DCPACK_BINARY_DEB=ON"
+        else
+          echo "::set-output name=cmake-type::-DCPACK_SYSTEM_NAME=${{ matrix.id}} -DINSTALL_PERUSER=ON "
+          echo "::set-output name=cmake-gen::-DCPACK_GENERATOR= -DCPACK_BINARY_STGZ=ON -DCPACK_BINARY_TGZ=ON"
+        fi
     - name: "Prerequisites: Submodules"
       shell: bash
       run: git submodule update --init --recursive
@@ -154,21 +166,27 @@ jobs:
       run: |
         cmake -H. -B"build/temp" \
           -DCMAKE_INSTALL_PREFIX="build/distrib" \
-          -DCMAKE_PACKAGE_NAME="streamfx-${{ matrix.id }}" \
-          -DCMAKE_PACKAGE_PREFIX="build/package" \
-          -DENABLE_FILTER_NVIDIA_FACE_TRACKING=FALSE
+          -DENABLE_FILTER_NVIDIA_FACE_TRACKING=FALSE \
+          ${{ steps.data.outputs.cmake-type }} \
+          -DCPACK_OUTPUT_FILE_PREFIX=../package \
+          -DCPACK_PACKAGE_NAME="StreamFX" \
+          ${{ steps.data.outputs.cmake-gen }} \
+          -DCPACK_DEBIAN_PACKAGE_DEPENDS=obs-studio \
+          -DCPACK_DEBIAN_PACKAGE_ENHANCES=obs-studio \
+          -DCPACK_DEBIAN_PACKAGE_PROVIDES=obs-streamfx \
+          -DCPACK_DEBIAN_PACKAGE_NAME=obs-streamfx \
+          -DCPACK_DEBIAN_PACKAGE_PRIORITY=optional \
+          -DCPACK_DEBIAN_PACKAGE_SECTION=video
     - name: "Build Project"
       shell: bash
       run: |
-        cmake --build "build/temp" --config RelWithDebInfo --target install
+        cmake --build "build/temp" --config RelWithDebInfo --target all
     - name: "Package Project"
       shell: bash
       run: |
-        mkdir build/package
-        cmake --build "build/temp" --config RelWithDebInfo --target PACKAGE_7Z
-        cmake --build "build/temp" --config RelWithDebInfo --target PACKAGE_ZIP
+        cmake --build "build/temp" --config RelWithDebInfo --target package
     - name: "Upload Artifacts"
       uses: actions/upload-artifact@v1
       with:
-        name: ${{ matrix.id }}
+        name: ${{ matrix.id }}-${{ matrix.type }}
         path: build/package

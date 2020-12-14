@@ -1541,13 +1541,16 @@ endif()
 ################################################################################
 
 if(NOT ${PREFIX}OBS_NATIVE)
-	include("CPack")
 	set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY "FALSE")
 	set(CPACK_MONOLITHIC_INSTALL ON)
 	set(CPACK_PACKAGE_CONTACT "${PROJECT_AUTHORS}")
 	set(CPACK_PACKAGE_VENDOR "${PROJECT_AUTHORS}")
 	set(CPACK_PACKAGE_VERSION "${VERSION_STRING}")
+	set(CPACK_RESOURCE_FILE_LICENSE "LICENSE")
 
 	# .deb
 	set(CPACK_DEBIAN_PACKAGE_DESCRIPTION "${PROJECT_DESCRIPTION}")
+
+	# CPack
+	include("CPack")
 endif()
