@@ -11,7 +11,9 @@ on:
       - '*'
 
 env:
-  DOWNLOAD_OBS_VERSION: "26.0.2-ci"
+  OBS_VERSION: "26.0.2"
+  DOWNLOAD_OBS_VERSION: "${{ env.OBS_VERSION }}-ci"
+  CPACK_PACKAGE_NAME: "StreamFX"
 
 jobs:
   windows:
@@ -69,7 +71,6 @@ jobs:
       run: |
         cmake -H. -B"build/temp" \
           -DCMAKE_INSTALL_PREFIX="build/distrib" \
-          -DCPACK_PACKAGE_NAME="streamfx" \
           -DCPACK_GENERATOR= -DCPACK_BINARY_NSIS=OFF -DCPACK_BINARY_7Z=ON -DCPACK_BINARY_ZIP=ON \
           -DCPACK_OUTPUT_FILE_PREFIX=../package
     - name: "Build Project"
@@ -122,6 +123,12 @@ jobs:
       CMAKE_GENERATOR: "Ninja"
       CC: ${{ matrix.compiler }}
       CXX: ${{ matrix.compiler-cxx }}
+      CPACK_DEBIAN_PACKAGE_DEPENDS: "obs-studio (>= ${{ env.OBS_VERSION }})"
+      CPACK_DEBIAN_PACKAGE_ENHANCES: obs-studio
+      CPACK_DEBIAN_PACKAGE_PROVIDES: obs-streamfx
+      CPACK_DEBIAN_PACKAGE_NAME: obs-streamfx
+      CPACK_DEBIAN_PACKAGE_PRIORITY: optional
+      CPACK_DEBIAN_PACKAGE_SECTION: video
     steps:
     - name: "Clone Repository"
       uses: actions/checkout@v1
@@ -169,14 +176,7 @@ jobs:
           -DENABLE_FILTER_NVIDIA_FACE_TRACKING=FALSE \
           ${{ steps.data.outputs.cmake-type }} \
           -DCPACK_OUTPUT_FILE_PREFIX=../package \
-          -DCPACK_PACKAGE_NAME="StreamFX" \
-          ${{ steps.data.outputs.cmake-gen }} \
-          -DCPACK_DEBIAN_PACKAGE_DEPENDS=obs-studio \
-          -DCPACK_DEBIAN_PACKAGE_ENHANCES=obs-studio \
-          -DCPACK_DEBIAN_PACKAGE_PROVIDES=obs-streamfx \
-          -DCPACK_DEBIAN_PACKAGE_NAME=obs-streamfx \
-          -DCPACK_DEBIAN_PACKAGE_PRIORITY=optional \
-          -DCPACK_DEBIAN_PACKAGE_SECTION=video
+          ${{ steps.data.outputs.cmake-gen }}
     - name: "Build Project"
       shell: bash
       run: |
