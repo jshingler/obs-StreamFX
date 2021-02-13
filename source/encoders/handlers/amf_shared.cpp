@@ -115,6 +115,12 @@ bool streamfx::encoder::ffmpeg::handler::amf::is_available()
 #else
 	std::filesystem::path lib_name = std::filesystem::u8path("libamfrt32.so.1");
 #endif
+#elif defined(D_PLATFORM_MAC)
+#if defined(D_PLATFORM_64BIT)
+	std::filesystem::path lib_name = std::filesystem::u8path("libamfrt64.so.1");
+#else
+	std::filesystem::path lib_name = std::filesystem::u8path("libamfrt32.so.1");
+#endif
 #endif
 	try {
 		util::library::load(lib_name);
