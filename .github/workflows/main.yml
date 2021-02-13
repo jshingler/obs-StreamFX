@@ -173,3 +173,82 @@ jobs:
       with:
         name: ${{ matrix.id }}
         path: build/package
+  macOS:
+    name: "macOS 11.0"
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [ macos-11.0 ]
+        compiler: [ gcc, clang ]
+        include:
+          - os: macos-11.0
+            compiler: gcc
+            compiler-cxx: g++
+            runner: macos-latest
+            packages: gcc-9 g++9
+            extra_command: sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 800 --slave /usr/bin/g++ g++ /usr/bin/g++-9
+            id: macos-latest
+          - os: macos-11.0
+            compiler: clang
+            compiler-cxx: clang++
+            compiler-version: 9
+            runner: macos-latest
+            packages: clang-9 clang-format-9 clang-tidy-9
+            extra_command: ""
+            id: macos-latest-clang
+    runs-on: ${{ matrix.runner }}
+    env:
+      DOWNLOAD_OBS_HASH_64: "SHA512=62EAD42890CEF953806F5780ED37304D6BD110F65D3ED83A88ADA462B0A0E46E9DEE477A76D456C444102EBA4F9F9A9EAAA299DCFDB2872233E2B35F775CCD0D"
+      CMAKE_GENERATOR: "Ninja"
+      CC: ${{ matrix.compiler }}
+      CXX: ${{ matrix.compiler-cxx }}
+    steps:
+    - name: "Clone Repository"
+      uses: actions/checkout@v1
+    - name: "Prerequisites: Submodules"
+      shell: bash
+      run: git submodule update --init --recursive
+    - name: "Prerequisites: Apt-Get"
+      shell: bash
+      run: |
+        sudo apt-get -qq update
+        sudo apt-get purge libjpeg9-dev:amd64 libjpeg8-dev:amd64 libjpeg-turbo8-dev:amd64
+        sudo apt-get install \
+          build-essential \
+          cmake \
+          ninja-build \
+          git \
+          qt5-default libqwt-qt5-dev libqt5svg5-dev \
+          libavcodec-dev libavdevice-dev libavfilter-dev libavformat-dev libavutil-dev libswresample-dev libswscale-dev \
+          libcurl4-openssl-dev \
+          ${{ matrix.packages }} \
+          checkinstall pkg-config
+        ${{ matrix.extra_command }}
+    - name: "Cache: OBS"
+      uses: actions/cache@v2
+      with:
+        path: "build/temp/libobs-download/libobs-download-prefix/src/libobs.7z"
+        key: ${{ matrix.id }}-${{ env.DOWNLOAD_OBS_VERSION }}-${{ env.DOWNLOAD_OBS_HASH_64 }}
+    - name: "Configure Project"
+      shell: bash
+      run: |
+        cmake -H. -B"build/temp" \
+          -DCMAKE_INSTALL_PREFIX="build/distrib" \
+          -DENABLE_FILTER_NVIDIA_FACE_TRACKING=FALSE \
+          -DPACKAGE_NAME="streamfx-${{ matrix.id }}" \
+          -DPACKAGE_PREFIX="build/package" 
+    - name: "Build Project"
+      shell: bash
+      run: |
+        cmake --build "build/temp" --config RelWithDebInfo --target install
+    - name: "Package Project"
+      shell: bash
+      run: |
+        mkdir build/package
+        cmake --build "build/temp" --config RelWithDebInfo --target PACKAGE_7Z
+        cmake --build "build/temp" --config RelWithDebInfo --target PACKAGE_ZIP
+    - name: "Upload Artifacts"
+      uses: actions/upload-artifact@v1
+      with:
+        name: ${{ matrix.id }}
+        path: build/package
