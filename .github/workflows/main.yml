@@ -209,7 +209,7 @@ jobs:
     - name: "Prerequisites: Submodules"
       shell: bash
       run: git submodule update --init --recursive
-    - name: "Prerequisites: Apt-Get"
+    - name: "Prerequisites: Install"
       shell: bash
       run: |
         # cmake is already installed dont need to install
@@ -250,7 +250,7 @@ jobs:
         
         env
         
-        find / -name "Qt5Config.cmake" -print
+        # find / -name "Qt5Config.cmake" -print
         
         cmake -H. -B"build/temp" \
           -DCMAKE_INSTALL_PREFIX="build/distrib" \
