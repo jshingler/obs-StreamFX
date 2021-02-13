@@ -15,164 +15,164 @@ env:
   DOWNLOAD_OBSDEPS_VERSION: "26.1.0"
 
 jobs:
-  windows:
-    name: "Windows 64-bit"
-    strategy:
-      fail-fast: true
-      matrix: 
-        runner: [ windows-2019 ]
-        include:
-          - runner: windows-2019
-            id: windows-2019
-            windows_sdk: "10.0.18362.0"
-            cmake_generator: "Visual Studio 16 2019"
-            cmake_generator_platform: "x64"
-    runs-on: ${{ matrix.runner }}
-    env:
-      QT_VERSION: "5.15.2"
-      DOWNLOAD_OBS_HASH_64: "SHA512=571B4196DF5CFBD3A8E113C97C7890000C490DDF1C6747529DE0F06063F928E7488095775919017104DE7A693CCF51A7A82BD04BCE62D6B3F0ED1F74A5F32B32"
-      DOWNLOAD_OBSDEPS_HASH: "SHA512=2D47E7579DE3FBD88C52BB62C2CA4D649BD958FBAE8E5B01EE263D7583B4D8EEEA8CE13C543BEF110FAC9142891C031973A1BC20AC6EED596E6AB97CCC669D16"
-      CMAKE_GENERATOR: ${{ matrix.cmake_generator }}
-      CMAKE_GENERATOR_PLATFORM: ${{ matrix.cmake_generator_platform }}
-      CMAKE_GENERATOR_TOOLSET: "host=x64"
-      CMAKE_SYSTEM_VERSION: ${{ matrix.windows_sdk }}
-    steps:
-    - name: "Clone Repository"
-      uses: actions/checkout@v1
-    - name: "Clone Submodules"
-      shell: bash
-      run: git submodule update --init --recursive
-    - name: "Cache: OBS"
-      uses: actions/cache@v2
-      with:
-        path: "build/temp/libobs-download/libobs-download-prefix/src/libobs.7z"
-        key: ${{ matrix.id }}-${{ env.DOWNLOAD_OBS_VERSION }}-${{ env.DOWNLOAD_OBS_HASH_64 }}
-    - name: "Cache: OBS Dependencies"
-      uses: actions/cache@v2
-      with:
-        path: "build/temp/obsdeps-download/obsdeps-download-prefix/src/obsdeps.7z"
-        key: ${{ matrix.id }}-${{ env.DOWNLOAD_OBSDEPS_VERSION }}-${{ env.DOWNLOAD_OBSDEPS_HASH }}
-    - name: "Cache: Qt"
-      uses: actions/cache@v2
-      id: cache-qt
-      with:
-        path: "../Qt"
-        key: ${{ matrix.id }}-${{ env.QT_VERSION }}
-    - name: "Prerequisites: Qt"
-      if: "steps.cache-qt.outputs.cache-hit != true"
-      shell: bash
-      run: |
-        curl -L "https://github.com/Xaymar/obs-studio/releases/download/26.1.0/qt_${QT_VERSION}_windows_64.7z" -o qt.7z
-        7z x -o../Qt/ qt.7z
-    - name: "Configure Project"
-      shell: bash
-      run: |
-        cmake -H. -B"build/temp" \
-          -DCMAKE_INSTALL_PREFIX="build/distrib" \
-          -DPACKAGE_NAME="streamfx-${{ matrix.id }}" \
-          -DPACKAGE_PREFIX="build/package" \
-          -DQt5_DIR="${PWD}/../Qt/msvc2019_64/lib/cmake/Qt5/"
-    - name: "Build Project"
-      shell: bash
-      run: |
-        cmake --build "build/temp" --config RelWithDebInfo --target INSTALL
-    - name: "Package Project"
-      shell: bash
-      run: |
-        mkdir build/package
-        cmake --build "build/temp" --config RelWithDebInfo --target PACKAGE_7Z
-        cmake --build "build/temp" --config RelWithDebInfo --target PACKAGE_ZIP
-    - name: "Package Installer (Prereqs)"
-      run: |
-        curl "-kL" "https://cdn.xaymar.com/ci/innosetup-6.0.3.exe" "-f" "--retry" "5" "-o" "inno.exe"
-        .\inno.exe /VERYSILENT /SP- /SUPPRESSMSGBOXES /NORESTART
-    - name: "Package Installer (Compile)"
-      run: |
-        & 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe' /Qp ".\build\temp\installer.iss"
-    - name: "Upload Artifacts"
-      uses: actions/upload-artifact@v1
-      with:
-        name: ${{ matrix.id }}
-        path: build/package
-  ubuntu:
-    name: "Ubuntu 64-bit"
-    strategy:
-      fail-fast: true
-      matrix:
-        ubuntu: [ focal ]
-        compiler: [ gcc, clang ]
-        include:
-          - ubuntu: focal
-            compiler: gcc
-            compiler-cxx: g++
-            runner: ubuntu-20.04
-            packages: gcc-9 g++9
-            extra_command: sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 800 --slave /usr/bin/g++ g++ /usr/bin/g++-9
-            id: ubuntu-20.04
-          - ubuntu: focal
-            compiler: clang
-            compiler-cxx: clang++
-            compiler-version: 9
-            runner: ubuntu-20.04
-            packages: clang-9 clang-format-9 clang-tidy-9
-            extra_command: ""
-            id: ubuntu-20.04-clang
-    runs-on: ${{ matrix.runner }}
-    env:
-      DOWNLOAD_OBS_HASH_64: "SHA512=62EAD42890CEF953806F5780ED37304D6BD110F65D3ED83A88ADA462B0A0E46E9DEE477A76D456C444102EBA4F9F9A9EAAA299DCFDB2872233E2B35F775CCD0D"
-      CMAKE_GENERATOR: "Ninja"
-      CC: ${{ matrix.compiler }}
-      CXX: ${{ matrix.compiler-cxx }}
-    steps:
-    - name: "Clone Repository"
-      uses: actions/checkout@v1
-    - name: "Prerequisites: Submodules"
-      shell: bash
-      run: git submodule update --init --recursive
-    - name: "Prerequisites: Apt-Get"
-      shell: bash
-      run: |
-        sudo apt-get -qq update
-        sudo apt-get purge libjpeg9-dev:amd64 libjpeg8-dev:amd64 libjpeg-turbo8-dev:amd64
-        sudo apt-get install \
-          build-essential \
-          cmake \
-          ninja-build \
-          git \
-          qt5-default libqwt-qt5-dev libqt5svg5-dev \
-          libavcodec-dev libavdevice-dev libavfilter-dev libavformat-dev libavutil-dev libswresample-dev libswscale-dev \
-          libcurl4-openssl-dev \
-          ${{ matrix.packages }} \
-          checkinstall pkg-config
-        ${{ matrix.extra_command }}
-    - name: "Cache: OBS"
-      uses: actions/cache@v2
-      with:
-        path: "build/temp/libobs-download/libobs-download-prefix/src/libobs.7z"
-        key: ${{ matrix.id }}-${{ env.DOWNLOAD_OBS_VERSION }}-${{ env.DOWNLOAD_OBS_HASH_64 }}
-    - name: "Configure Project"
-      shell: bash
-      run: |
-        cmake -H. -B"build/temp" \
-          -DCMAKE_INSTALL_PREFIX="build/distrib" \
-          -DENABLE_FILTER_NVIDIA_FACE_TRACKING=FALSE \
-          -DPACKAGE_NAME="streamfx-${{ matrix.id }}" \
-          -DPACKAGE_PREFIX="build/package" 
-    - name: "Build Project"
-      shell: bash
-      run: |
-        cmake --build "build/temp" --config RelWithDebInfo --target install
-    - name: "Package Project"
-      shell: bash
-      run: |
-        mkdir build/package
-        cmake --build "build/temp" --config RelWithDebInfo --target PACKAGE_7Z
-        cmake --build "build/temp" --config RelWithDebInfo --target PACKAGE_ZIP
-    - name: "Upload Artifacts"
-      uses: actions/upload-artifact@v1
-      with:
-        name: ${{ matrix.id }}
-        path: build/package
+#   windows:
+#     name: "Windows 64-bit"
+#     strategy:
+#       fail-fast: true
+#       matrix: 
+#         runner: [ windows-2019 ]
+#         include:
+#           - runner: windows-2019
+#             id: windows-2019
+#             windows_sdk: "10.0.18362.0"
+#             cmake_generator: "Visual Studio 16 2019"
+#             cmake_generator_platform: "x64"
+#     runs-on: ${{ matrix.runner }}
+#     env:
+#       QT_VERSION: "5.15.2"
+#       DOWNLOAD_OBS_HASH_64: "SHA512=571B4196DF5CFBD3A8E113C97C7890000C490DDF1C6747529DE0F06063F928E7488095775919017104DE7A693CCF51A7A82BD04BCE62D6B3F0ED1F74A5F32B32"
+#       DOWNLOAD_OBSDEPS_HASH: "SHA512=2D47E7579DE3FBD88C52BB62C2CA4D649BD958FBAE8E5B01EE263D7583B4D8EEEA8CE13C543BEF110FAC9142891C031973A1BC20AC6EED596E6AB97CCC669D16"
+#       CMAKE_GENERATOR: ${{ matrix.cmake_generator }}
+#       CMAKE_GENERATOR_PLATFORM: ${{ matrix.cmake_generator_platform }}
+#       CMAKE_GENERATOR_TOOLSET: "host=x64"
+#       CMAKE_SYSTEM_VERSION: ${{ matrix.windows_sdk }}
+#     steps:
+#     - name: "Clone Repository"
+#       uses: actions/checkout@v1
+#     - name: "Clone Submodules"
+#       shell: bash
+#       run: git submodule update --init --recursive
+#     - name: "Cache: OBS"
+#       uses: actions/cache@v2
+#       with:
+#         path: "build/temp/libobs-download/libobs-download-prefix/src/libobs.7z"
+#         key: ${{ matrix.id }}-${{ env.DOWNLOAD_OBS_VERSION }}-${{ env.DOWNLOAD_OBS_HASH_64 }}
+#     - name: "Cache: OBS Dependencies"
+#       uses: actions/cache@v2
+#       with:
+#         path: "build/temp/obsdeps-download/obsdeps-download-prefix/src/obsdeps.7z"
+#         key: ${{ matrix.id }}-${{ env.DOWNLOAD_OBSDEPS_VERSION }}-${{ env.DOWNLOAD_OBSDEPS_HASH }}
+#     - name: "Cache: Qt"
+#       uses: actions/cache@v2
+#       id: cache-qt
+#       with:
+#         path: "../Qt"
+#         key: ${{ matrix.id }}-${{ env.QT_VERSION }}
+#     - name: "Prerequisites: Qt"
+#       if: "steps.cache-qt.outputs.cache-hit != true"
+#       shell: bash
+#       run: |
+#         curl -L "https://github.com/Xaymar/obs-studio/releases/download/26.1.0/qt_${QT_VERSION}_windows_64.7z" -o qt.7z
+#         7z x -o../Qt/ qt.7z
+#     - name: "Configure Project"
+#       shell: bash
+#       run: |
+#         cmake -H. -B"build/temp" \
+#           -DCMAKE_INSTALL_PREFIX="build/distrib" \
+#           -DPACKAGE_NAME="streamfx-${{ matrix.id }}" \
+#           -DPACKAGE_PREFIX="build/package" \
+#           -DQt5_DIR="${PWD}/../Qt/msvc2019_64/lib/cmake/Qt5/"
+#     - name: "Build Project"
+#       shell: bash
+#       run: |
+#         cmake --build "build/temp" --config RelWithDebInfo --target INSTALL
+#     - name: "Package Project"
+#       shell: bash
+#       run: |
+#         mkdir build/package
+#         cmake --build "build/temp" --config RelWithDebInfo --target PACKAGE_7Z
+#         cmake --build "build/temp" --config RelWithDebInfo --target PACKAGE_ZIP
+#     - name: "Package Installer (Prereqs)"
+#       run: |
+#         curl "-kL" "https://cdn.xaymar.com/ci/innosetup-6.0.3.exe" "-f" "--retry" "5" "-o" "inno.exe"
+#         .\inno.exe /VERYSILENT /SP- /SUPPRESSMSGBOXES /NORESTART
+#     - name: "Package Installer (Compile)"
+#       run: |
+#         & 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe' /Qp ".\build\temp\installer.iss"
+#     - name: "Upload Artifacts"
+#       uses: actions/upload-artifact@v1
+#       with:
+#         name: ${{ matrix.id }}
+#         path: build/package
+#   ubuntu:
+#     name: "Ubuntu 64-bit"
+#     strategy:
+#       fail-fast: true
+#       matrix:
+#         ubuntu: [ focal ]
+#         compiler: [ gcc, clang ]
+#         include:
+#           - ubuntu: focal
+#             compiler: gcc
+#             compiler-cxx: g++
+#             runner: ubuntu-20.04
+#             packages: gcc-9 g++9
+#             extra_command: sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 800 --slave /usr/bin/g++ g++ /usr/bin/g++-9
+#             id: ubuntu-20.04
+#           - ubuntu: focal
+#             compiler: clang
+#             compiler-cxx: clang++
+#             compiler-version: 9
+#             runner: ubuntu-20.04
+#             packages: clang-9 clang-format-9 clang-tidy-9
+#             extra_command: ""
+#             id: ubuntu-20.04-clang
+#     runs-on: ${{ matrix.runner }}
+#     env:
+#       DOWNLOAD_OBS_HASH_64: "SHA512=62EAD42890CEF953806F5780ED37304D6BD110F65D3ED83A88ADA462B0A0E46E9DEE477A76D456C444102EBA4F9F9A9EAAA299DCFDB2872233E2B35F775CCD0D"
+#       CMAKE_GENERATOR: "Ninja"
+#       CC: ${{ matrix.compiler }}
+#       CXX: ${{ matrix.compiler-cxx }}
+#     steps:
+#     - name: "Clone Repository"
+#       uses: actions/checkout@v1
+#     - name: "Prerequisites: Submodules"
+#       shell: bash
+#       run: git submodule update --init --recursive
+#     - name: "Prerequisites: Apt-Get"
+#       shell: bash
+#       run: |
+#         sudo apt-get -qq update
+#         sudo apt-get purge libjpeg9-dev:amd64 libjpeg8-dev:amd64 libjpeg-turbo8-dev:amd64
+#         sudo apt-get install \
+#           build-essential \
+#           cmake \
+#           ninja-build \
+#           git \
+#           qt5-default libqwt-qt5-dev libqt5svg5-dev \
+#           libavcodec-dev libavdevice-dev libavfilter-dev libavformat-dev libavutil-dev libswresample-dev libswscale-dev \
+#           libcurl4-openssl-dev \
+#           ${{ matrix.packages }} \
+#           checkinstall pkg-config
+#         ${{ matrix.extra_command }}
+#     - name: "Cache: OBS"
+#       uses: actions/cache@v2
+#       with:
+#         path: "build/temp/libobs-download/libobs-download-prefix/src/libobs.7z"
+#         key: ${{ matrix.id }}-${{ env.DOWNLOAD_OBS_VERSION }}-${{ env.DOWNLOAD_OBS_HASH_64 }}
+#     - name: "Configure Project"
+#       shell: bash
+#       run: |
+#         cmake -H. -B"build/temp" \
+#           -DCMAKE_INSTALL_PREFIX="build/distrib" \
+#           -DENABLE_FILTER_NVIDIA_FACE_TRACKING=FALSE \
+#           -DPACKAGE_NAME="streamfx-${{ matrix.id }}" \
+#           -DPACKAGE_PREFIX="build/package" 
+#     - name: "Build Project"
+#       shell: bash
+#       run: |
+#         cmake --build "build/temp" --config RelWithDebInfo --target install
+#     - name: "Package Project"
+#       shell: bash
+#       run: |
+#         mkdir build/package
+#         cmake --build "build/temp" --config RelWithDebInfo --target PACKAGE_7Z
+#         cmake --build "build/temp" --config RelWithDebInfo --target PACKAGE_ZIP
+#     - name: "Upload Artifacts"
+#       uses: actions/upload-artifact@v1
+#       with:
+#         name: ${{ matrix.id }}
+#         path: build/package
   macOS:
     name: "macOS 11.0"
     strategy:
@@ -246,7 +246,7 @@ jobs:
 
         # For pkg-config to find qt you may need to set:
         export PKG_CONFIG_PATH="/usr/local/opt/qt/lib/pkgconfig"
-        export Qt5_DIR=${PKG_CONFIG_PATH}
+        export Qt5_DIR="/usr/local/Cellar/qt/5.15.2/lib/cmake/Qt5"
         
         env
         
