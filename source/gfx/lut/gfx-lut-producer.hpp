@@ -1,4 +1,4 @@
-// Copyright (c) 2020 Michael Fabian Dirks <info@xaymar.com>
+// Copyright (c) 2021 Michael Fabian Dirks <info@xaymar.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,25 +18,22 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-// Platform Information
-#define D_PLATFORM "@CMAKE_SYSTEM_NAME@"
-#define D_PLATFORM_OS "@D_PLATFORM_OS@"
-#cmakedefine D_PLATFORM_WINDOWS
-#cmakedefine D_PLATFORM_LINUX
-#cmakedefine D_PLATFORM_MAC
-#cmakedefine D_PLATFORM_UNKNOWN
+#pragma once
+#include <memory>
 
-// Instruction Set
-#define D_PLATFORM_INSTR "@D_PLATFORM_INSTR@"
-#cmakedefine D_PLATFORM_INSTR_X86
-#cmakedefine D_PLATFORM_INSTR_ARM
-#cmakedefine D_PLATFORM_INSTR_ITANIUM
+#include "gfx-lut.hpp"
+#include "obs/gs/gs-effect.hpp"
+#include "obs/gs/gs-rendertarget.hpp"
 
-// Bitness
-#define D_PLATFORM_BITS @D_PLATFORM_BITS@
-#define D_PLATFORM_BITS_PTR @D_PLATFORM_BITS_PTR@
-#if D_PLATFORM_BITS == 32
-	#define D_PLATFORM_32BIT
-#else
-	#define D_PLATFORM_64BIT
-#endif
+namespace gfx::lut {
+	class producer {
+		std::shared_ptr<gfx::lut::data>   _data;
+		std::shared_ptr<gs::rendertarget> _rt;
+
+		public:
+		producer();
+		~producer();
+
+		std::shared_ptr<gs::texture> produce(gfx::lut::color_depth depth);
+	};
+} // namespace gfx::lut
