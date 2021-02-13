@@ -250,6 +250,8 @@ jobs:
         
         env
         
+        find / -name "Qt5Config.cmake" -print
+        
         cmake -H. -B"build/temp" \
           -DCMAKE_INSTALL_PREFIX="build/distrib" \
           -DENABLE_FILTER_NVIDIA_FACE_TRACKING=FALSE \
