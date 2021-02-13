@@ -141,9 +141,10 @@ message(STATUS "${LOGPREFIX} Version ${VERSION_STRING}")
 ################################################################################
 # Project
 ################################################################################
+# JLS Hack VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}.${VERSION_TWEAK}
 project(
 	StreamFX
-	VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}.${VERSION_TWEAK}
+	VERSION 0.10.0.0
 	DESCRIPTION "Additional sources, filters, transitions and encoders for OBS Studio."
 	HOMEPAGE_URL "https://streamfx.xaymar.com/"
 )
