@@ -246,6 +246,9 @@ jobs:
 
         # For pkg-config to find qt you may need to set:
         export PKG_CONFIG_PATH="/usr/local/opt/qt/lib/pkgconfig"
+        export Qt5_DIR=${PKG_CONFIG_PATH}
+        
+        env
         
         cmake -H. -B"build/temp" \
           -DCMAKE_INSTALL_PREFIX="build/distrib" \
