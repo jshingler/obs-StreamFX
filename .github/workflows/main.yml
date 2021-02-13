@@ -186,7 +186,8 @@ jobs:
             compiler-cxx: g++
             runner: macos-latest
             packages: gcc-9 g++9
-            extra_command: sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 800 --slave /usr/bin/g++ g++ /usr/bin/g++-9
+            #extra_command: sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 800 --slave /usr/bin/g++ g++ /usr/bin/g++-9
+            extra_command: ""  
             id: macos-latest
           - os: macos-11.0
             compiler: clang
@@ -211,19 +212,20 @@ jobs:
     - name: "Prerequisites: Apt-Get"
       shell: bash
       run: |
-        sudo apt-get -qq update
-        sudo apt-get purge libjpeg9-dev:amd64 libjpeg8-dev:amd64 libjpeg-turbo8-dev:amd64
-        sudo apt-get install \
-          build-essential \
-          cmake \
-          ninja-build \
-          git \
-          qt5-default libqwt-qt5-dev libqt5svg5-dev \
-          libavcodec-dev libavdevice-dev libavfilter-dev libavformat-dev libavutil-dev libswresample-dev libswscale-dev \
-          libcurl4-openssl-dev \
-          ${{ matrix.packages }} \
-          checkinstall pkg-config
-        ${{ matrix.extra_command }}
+        brew install cmake
+        #sudo apt-get -qq update
+        #sudo apt-get purge libjpeg9-dev:amd64 libjpeg8-dev:amd64 libjpeg-turbo8-dev:amd64
+        #sudo apt-get install \
+        #  build-essential \
+        #  cmake \
+        #  ninja-build \
+        #  git \
+        #  qt5-default libqwt-qt5-dev libqt5svg5-dev \
+        #  libavcodec-dev libavdevice-dev libavfilter-dev libavformat-dev libavutil-dev libswresample-dev libswscale-dev \
+        #  libcurl4-openssl-dev \
+        #  ${{ matrix.packages }} \
+        #  checkinstall pkg-config
+        #${{ matrix.extra_command }}
     - name: "Cache: OBS"
       uses: actions/cache@v2
       with:
