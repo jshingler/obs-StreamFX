@@ -212,7 +212,8 @@ jobs:
     - name: "Prerequisites: Apt-Get"
       shell: bash
       run: |
-        brew install cmake
+        # cmake is already installed dont need to install
+        #brew install cmake
         #sudo apt-get -qq update
         #sudo apt-get purge libjpeg9-dev:amd64 libjpeg8-dev:amd64 libjpeg-turbo8-dev:amd64
         #sudo apt-get install \
